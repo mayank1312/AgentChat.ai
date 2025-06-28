@@ -5,15 +5,17 @@ import {z} from "zod";
 import { authClient } from "@/lib/auth-client";
 import {zodResolver} from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
+import { FaGithub, FaGoogle } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import {Form,FormControl,FormField,FormItem,FormLabel,FormMessage,FormDescription} from "@/components/ui/form";
 import {Alert,AlertDescription,AlertTitle} from "@/components/ui/alert";
 import { OctagonAlertIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 import { useState } from "react";
-import path from "path";
+import { useRouter } from "next/navigation";
+
 
 const formSchema=z.object({
     name:z.string().min(1,{message:"Name is required"}),
@@ -47,13 +49,38 @@ const [pending,setPending]=useState(false);
         {
             name:data.name,
             email:data.email,
-            password:data.password
+            password:data.password,
+            callbackURL:"/"
+        },{
+            onSuccess:()=>{
+                
+                setPending(false);
+                router.push("/");
+               
+            },
+            onError:({error})=>{
+                setPending(false);
+                setError(error.message)
+            }
+
+        }
+       )
+       
+    }
+    const onSocial=(provider:"github" | "google")=>{
+       setError(null);
+       setPending(true);
+        authClient.signIn.social(
+        {
+           provider:provider,
+           callbackURL:"/"
         },{
             onSuccess:()=>{
                 setPending(false);
-                router.push("/")
+                
             },
             onError:({error})=>{
+                setPending(false);
                 setError(error.message)
             }
 
@@ -147,13 +174,15 @@ const [pending,setPending]=useState(false);
                     <span className="bg-card text-muted-foreground relative z-10 px-2 ">Or continue with</span>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                       <Button variant="outline" className="w-full" type="button" disabled={pending}>
-                        <img src="/google.svg" alt="Google" className="h-4 w-4 mr-2" />
-                        Google  
+                       <Button  onClick={(e) => {e.preventDefault();onSocial("google");console.log("Google")}}
+  variant="outline" className="w-full" type="button" >
+                       
+                        <FaGoogle/>   
                         </Button>
-                        <Button variant="outline" className="w-full" type="button" disabled={pending}>
-                        <img src="/github.svg" alt="Github" className="h-4 w-4 mr-2" />
-                        Github  
+                        <Button onClick={()=>onSocial("github")}
+                         variant="outline" className="w-full" type="button" disabled={pending}>
+                        
+                        <FaGithub/>  
                         </Button>
 
                     </div>
