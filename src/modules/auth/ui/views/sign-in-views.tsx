@@ -3,6 +3,7 @@
 import { Card,CardContent } from "@/components/ui/card"
 import {z} from "zod";
 import { authClient } from "@/lib/auth-client";
+import { FaGithub, FaGoogle } from "react-icons/fa";
 import {zodResolver} from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,15 +12,16 @@ import {Alert,AlertDescription,AlertTitle} from "@/components/ui/alert";
 import { OctagonAlertIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const formSchema=z.object({
     email:z.string().email(),
     password:z.string().min(1,{message:"Password is required"}),
 })
 export const SignInViews=()=>{
-const router=useRouter();
+    const router=useRouter();
 const [error,setError]=useState<string | null>(null);
 const [pending,setPending]=useState(false);
 
@@ -37,13 +39,16 @@ const [pending,setPending]=useState(false);
         authClient.signIn.email(
         {
             email:data.email,
-            password:data.password
+            password:data.password,
+            callbackURL:"/"
         },{
             onSuccess:()=>{
                 setPending(false);
-                router.push("/")
+                router.push("/");
+                
             },
             onError:({error})=>{
+                setPending(false);
                 setError(error.message)
             }
 
@@ -51,6 +56,27 @@ const [pending,setPending]=useState(false);
        )
        
     }
+     const onSocial=(provider:"github" | "google")=>{
+       
+           setError(null);
+           setPending(true);
+            authClient.signIn.social(
+            {
+               provider:provider,
+               callbackURL:"/"
+            },{
+                onSuccess:()=>{
+                    setPending(false);
+                },
+                onError:({error})=>{
+                    setPending(false);
+                    setError(error.message)
+                }
+    
+            }
+           )
+           
+        }
     return (
        <div className="flex flex-col gap-6">
         <Card className="overflow-hidden p-0">
@@ -107,13 +133,13 @@ const [pending,setPending]=useState(false);
                     <span className="bg-card text-muted-foreground relative z-10 px-2 ">Or continue with</span>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                       <Button variant="outline" className="w-full" type="button" disabled={pending}>
-                        <img src="/google.svg" alt="Google" className="h-4 w-4 mr-2" />
-                        Google  
+                       <Button onClick={()=>onSocial("google")} variant="outline" className="w-full" type="button" disabled={pending}>
+                      
+                        <FaGoogle/>  
                         </Button>
-                        <Button variant="outline" className="w-full" type="button" disabled={pending}>
-                        <img src="/github.svg" alt="Github" className="h-4 w-4 mr-2" />
-                        Github  
+                        <Button onClick={()=>onSocial("github")} variant="outline" className="w-full" type="button" disabled={pending}>
+                       
+                        <FaGithub/>  
                         </Button>
 
                     </div>
