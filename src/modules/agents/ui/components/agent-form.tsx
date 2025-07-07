@@ -47,6 +47,21 @@ interface AgentFormProps {
             }
         })
     );
+     const updateAgent=useMutation(
+        trpc.agents.update.mutationOptions({
+            onSuccess: async()=>{
+                await queryClient.invalidateQueries(
+                    trpc.agents.getMany.queryOptions({})
+                );
+
+               
+                onSuccess?.();
+            },
+            onError:(error)=>{
+                toast.error(error.message);
+            }
+        })
+    );
     const form=useForm<z.infer<typeof agentsInsertSchema>>({
         resolver:zodResolver(agentsInsertSchema),
         defaultValues:  {
@@ -56,13 +71,13 @@ interface AgentFormProps {
     });
 
     const isEdit=!!initialValues?.id;
-    const isPending=createAgent.isPending;
+    const isPending=createAgent.isPending || updateAgent.isPending
 
     const onSubmit= (data: z.infer<typeof agentsInsertSchema>) => {
         if (isEdit && initialValues?.id) {
             // Handle edit logic here
             // For example, you might want to call an update mutation
-            console.log("Editing agent with data:", data);
+           updateAgent.mutate({...data,id:initialValues.id})
         } else {
             createAgent.mutateAsync(data);
             

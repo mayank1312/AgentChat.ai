@@ -2,14 +2,14 @@ interface Props{
     agentId: string;
     agentName: string;
     onEdit: () => void;
-    onRename: () => void;
+    onRemove: () => void;
 }
 import { Button } from "@/components/ui/button";
 import {Breadcrumb,BreadcrumbItem,BreadcrumbLink,BreadcrumbList,BreadcrumbSeparator} from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { ChevronRightIcon, MoreVerticalIcon, PencilIcon, TrashIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-export const AgentIdViewHeader = ({agentId, agentName, onEdit, onRename}:Props) => {
+export const AgentIdViewHeader = ({agentId, agentName, onEdit, onRemove}:Props) => {
     return (
         <div className="flex items-center justify-between mt-4">
             <Breadcrumb>
@@ -40,7 +40,7 @@ export const AgentIdViewHeader = ({agentId, agentName, onEdit, onRename}:Props) 
                        <PencilIcon className="w-4 h-4 text-black"/>
                         Edit Agent
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onRename}>
+                    <DropdownMenuItem onClick={onRemove}>
                        <TrashIcon className="w-4 h-4 text-black"/>
                         Delete
                     </DropdownMenuItem>
