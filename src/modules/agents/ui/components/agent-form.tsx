@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface AgentFormProps {
     onSuccess?: () => void;
@@ -26,7 +27,7 @@ interface AgentFormProps {
     initialValues,
 }: AgentFormProps) => {
     const trpc =useTRPC();
- 
+     const router=useRouter();
     const queryClient=useQueryClient();
     const createAgent=useMutation(
         trpc.agents.create.mutationOptions({
@@ -34,7 +35,9 @@ interface AgentFormProps {
                 await queryClient.invalidateQueries(
                     trpc.agents.getMany.queryOptions({})
                 );
-
+                await queryClient.invalidateQueries(
+                    trpc.premium.getFreeUsage.queryOptions()
+                );
                 if(initialValues?.id) {
                    await queryClient.invalidateQueries(
                         trpc.agents.getOne.queryOptions({ id: initialValues.id })
@@ -44,6 +47,10 @@ interface AgentFormProps {
             },
             onError:(error)=>{
                 toast.error(`Failed to create agent: ${error.message}`);
+
+                if(error.data?.code==="FORBIDDEN"){
+                    router.push("/upgrade");
+                }
             }
         })
     );
