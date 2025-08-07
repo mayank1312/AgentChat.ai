@@ -14,6 +14,7 @@ import { useState } from "react";
 import { CommandSelect } from "@/components/command-select";
 import { GeneratedAvatar } from "@/components/generated-avatar";
 import { NewAgentDialog } from "@/modules/agents/ui/components/new-agent-dialog";
+import { useRouter } from "next/navigation";
 
 interface MeetingFormProps {
     onSuccess?: (id?:string) => void;
@@ -27,7 +28,7 @@ interface MeetingFormProps {
     initialValues,
 }: MeetingFormProps) => {
     const trpc =useTRPC();
- 
+    const router=useRouter();
     const queryClient=useQueryClient();  
     const[openNewAgentDialog,setOpenNewAgentDialog]=useState(false) 
     const [agentSearch,setAgentSearch]=useState("")
@@ -44,7 +45,9 @@ interface MeetingFormProps {
                 await queryClient.invalidateQueries(
                     trpc.meetings.getMany.queryOptions({})
                 );
-
+                await queryClient.invalidateQueries(
+                    trpc.premium.getFreeUsage.queryOptions()
+                );
                 if(initialValues?.id) {
                    await queryClient.invalidateQueries(
                         trpc.meetings.getOne.queryOptions({ id: initialValues.id })
@@ -54,6 +57,10 @@ interface MeetingFormProps {
             },
             onError:(error)=>{
                 toast.error(`Failed to create Meeting: ${error.message}`);
+
+                if(error.data?.code==="FORBIDDEN"){
+                    router.push("/upgrade");
+                }
             }
         })
     );

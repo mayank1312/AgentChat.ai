@@ -28,10 +28,10 @@ export const AgentIdView = ({agentId}:Props) => {
     }));
     const removeAgent=useMutation(
         trpc.agents.remove.mutationOptions({
-            onSuccess:()=>{
-                queryClient.invalidateQueries(trpc.agents.getMany.queryOptions({}));
-
-                router.push("/agents");
+            onSuccess:async()=>{
+               await queryClient.invalidateQueries(trpc.agents.getMany.queryOptions({}));
+                await queryClient.invalidateQueries(trpc.premium.getFreeUsage.queryOptions());
+               await router.push("/agents");
 
             },
             onError:(error)=>{
