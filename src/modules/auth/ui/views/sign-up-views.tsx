@@ -55,7 +55,7 @@ const [pending,setPending]=useState(false);
             onSuccess:()=>{
                 
                 setPending(false);
-                router.push("/");
+                router.push("/meetings");
                
             },
             onError:({error})=>{
