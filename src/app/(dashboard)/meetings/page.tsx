@@ -11,7 +11,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { loadSearchParams } from "@/modules/meetings/param";
 
 interface Props{
-  searchParam:Promise<SearchParams>
+  searchParam:SearchParams
 }
 const Page = async({searchParam}:Props) => {
   const filters=await loadSearchParams(searchParam)
