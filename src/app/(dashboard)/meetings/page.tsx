@@ -11,10 +11,10 @@ import { ErrorBoundary } from "react-error-boundary";
 import { loadSearchParams } from "@/modules/meetings/param";
 
 interface Props{
-  searchParam:SearchParams
+  searchParams:SearchParams
 }
-const Page = async({searchParam}:Props) => {
-  const filters=await loadSearchParams(searchParam)
+const Page = async({searchParams}:Props) => {
+  const filters=await loadSearchParams(searchParams)
    const session=await auth.api.getSession({
           headers:await headers()
     })
