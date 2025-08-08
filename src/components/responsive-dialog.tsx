@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from "@/components/ui/dialog";
-import {Drawer,DrawerClose,DrawerHeader,DrawerTitle,DrawerDescription, DrawerContent} from "@/components/ui/drawer";
+import {Drawer,DrawerHeader,DrawerTitle,DrawerDescription, DrawerContent} from "@/components/ui/drawer";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 

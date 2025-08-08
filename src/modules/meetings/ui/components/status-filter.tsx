@@ -2,7 +2,6 @@ import { CircleCheckIcon, CircleXIcon, ClockArrowUpIcon, LoaderIcon, VideoIcon }
 import { MeetingStatus } from "../../types";
 import { useMeetingsFilters } from "../../hooks/use-meetings-filters";
 import { CommandSelect } from "@/components/command-select";
-import { Value } from "@radix-ui/react-select";
 
 const options=[
     {

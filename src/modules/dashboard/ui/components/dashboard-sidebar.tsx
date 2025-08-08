@@ -66,7 +66,7 @@ export const DashboardSidebar=()=>{
                                     )}
                                     isActive={pathname===items.href}
                                     >
-                                        <Link href={items.href as any}>
+                                        <Link href={items.href}>
                                             <items.icon className="h-4 w-4" />
                                             <span className="text-sm font-medium tracking-tight">
                                                 {items.label}
@@ -87,7 +87,7 @@ export const DashboardSidebar=()=>{
                             {SecondSection.map((items)=>(
                                 <SidebarMenuItem key={items.href}>
                                     <SidebarMenuButton asChild>
-                                        <Link href={items.href as any}>
+                                        <Link href={items.href}>
                                             <items.icon className="h-4 w-4" />
                                             <span className="text-sm font-medium tracking-tight">
                                                 {items.label}
