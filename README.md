@@ -3,7 +3,7 @@
 🚀 **AgentChat.ai** is a next-gen AI-powered meeting platform where you can create AI agents, invite them into meetings, and collaborate on **anything** — from brainstorming ideas to deep technical discussions.  
 It automatically generates **summaries, transcripts, recordings**, and even lets you **ask the AI about the meeting afterward**. All powered by **OpenAI** for speed and accuracy.
 
-Live at: [https://agentchat.ai](https://agentchat.ai)
+Live at: [https://agent-chat-ai-mu.vercel.app/](https://agent-chat-ai-mu.vercel.app/)
 
 ---
 
@@ -58,12 +58,12 @@ Live at: [https://agentchat.ai](https://agentchat.ai)
 > **Note:** These steps are for local development. For production, refer to the [deployment section](#-deployment).
 
 ### 1️⃣ Clone Repository
-```bash
-git clone https://github.com/mayank1312/AgentChat.ai.git
+git clone https://github.com/mayank1312/AgentChat.ai.gi
 
-Install Dependencies
+
+### 2️⃣ Install Dependencies
 npm install -- legacy-peer-deps 
 
-Setup your Enviornmental variables 
+### 3️⃣ Setup your Enviornmental variables 
 
 
