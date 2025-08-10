@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AgentChat.ai
 
-## Getting Started
+🚀 **AgentChat.ai** is a next-gen AI-powered meeting platform where you can create AI agents, invite them into meetings, and collaborate on **anything** — from brainstorming ideas to deep technical discussions.  
+It automatically generates **summaries, transcripts, recordings**, and even lets you **ask the AI about the meeting afterward**. All powered by **OpenAI** for speed and accuracy.
 
-First, run the development server:
+Live at: [https://agentchat.ai](https://agentchat.ai)
 
+---
+
+## ✨ Features
+
+- **Authentication**
+  - Login/Signup via **Google**, **GitHub**, or Email/Password (powered by [BetterAuth](https://better-auth.com/))
+- **AI-Powered Meetings**
+  - Create and manage meetings
+  - Invite **custom AI agents** into discussions
+  - Real-time interaction with multiple AI participants
+- **Post-Meeting Intelligence**
+  - Automatic **summary**, **full transcript**, and **recording**
+  - Ask follow-up questions about past meetings
+- **Subscription Plans**
+  - Monthly, Yearly, and **Enterprise** tiers (powered by Polar Sandbox)
+- **Event Tracking**
+  - End-to-end event tracking via [Inngest](https://www.inngest.com/) for analytics & workflows
+- **Blazing Fast**
+  - Optimized with OpenAI APIs for minimal latency
+
+---
+
+## 🖼️ How It Works
+
+1. **Sign up** using Google, GitHub, or email.
+2. **Create an AI Agent** — define its role, expertise, and personality.
+3. **Start a Meeting** and invite agents + human participants.
+4. Discuss **anything** — product design, legal matters, brainstorming, project planning, etc.
+5. **End Meeting** → Get instant:
+   - 📄 Meeting Summary
+   - 📝 Transcript
+   - 🎥 Recording
+6. **Ask AI** about the meeting anytime after it’s over.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend:** Next.js, Tailwind CSS
+- **Auth:** BetterAuth (Google, GitHub, Email)
+- **AI Engine:** OpenAI API
+- **Payments:** Polar Sandbox
+- **Database:** [Neon](https://neon.tech/) (Serverless Postgres)
+- **Event Tracking & Workflows:** Inngest
+- **Deployment:** Vercel
+
+---
+
+## 🚀 Getting Started (For Developers)
+
+> **Note:** These steps are for local development. For production, refer to the [deployment section](#-deployment).
+
+### 1️⃣ Clone Repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+git clone https://github.com/mayank1312/AgentChat.ai.git
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Install Dependencies
+npm install -- legacy-peer-deps 
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Setup your Enviornmental variables 
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
