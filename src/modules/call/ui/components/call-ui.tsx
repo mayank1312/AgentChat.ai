@@ -6,9 +6,10 @@ import { CallEnded } from "./call-ended";
 
 interface Props{
     meetingName:string;
+    meetingId:string;
 }
 
-export const CallUi=({meetingName}:Props)=>{
+export const CallUi=({meetingName, meetingId}:Props)=>{
  const call=useCall();
  const [show,setShow]=useState<"lobby" | "call" | "ended">("lobby");
 
@@ -19,13 +20,13 @@ export const CallUi=({meetingName}:Props)=>{
  }
   const handleLeave=()=>{
     if(!call) return;
-    call.endCall();
+    call.leave();
     setShow("ended");
  }
 
  return (
     <StreamTheme className="h-full">
-        {show==="lobby" && <CallLobby onJoin={handleJoin}/>}
+        {show==="lobby" && <CallLobby onJoin={handleJoin} meetingId={meetingId}/>}
          {show==="call" && <CallActive meetingName={meetingName} onLeave={handleLeave}/>}
           {show==="ended" && <CallEnded/>}
     </StreamTheme>

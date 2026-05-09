@@ -72,6 +72,7 @@ export const CallConnect=({meetingId,meetingName,userId,userImage,userName}:Prop
         <StreamCall call={call}>
          <CallUi
          meetingName={meetingName}
+         meetingId={meetingId}
          />
         </StreamCall>
     </StreamVideo>

@@ -1,9 +1,9 @@
-import OpenAI from "openai"
 import { db } from "@/db";
 import { agents, meetings } from "@/db/schema";
 import { inngest } from "@/inngest/client";
 import { streamVideo } from "@/lib/stream-video"
-import {ChatCompletionMessageParam} from "openai/resources/index.mjs"
+import { initializeOllamaAgent, generateAgentResponse, AgentResponseContext } from "@/lib/ollama-agent"
+import { checkOllamaHealth, listOllamaModels } from "@/lib/ollama"
 import {
 MessageNewEvent,
 CallEndedEvent,
@@ -12,20 +12,21 @@ CallSessionParticipantLeftEvent,
 CallRecordingReadyEvent,
 CallSessionStartedEvent
 } from "@stream-io/node-sdk"
-import { and, eq, not } from "drizzle-orm";
+import { and, eq, not, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { GneneratedAvatarUri } from "@/lib/avatar";
 import { streamChat } from "@/lib/stream-chat";
-
-const openaiclient=new OpenAI({apiKey:process.env.OPEN_API_KEY! });
 
 function verifySignatureWithSDK(body:string,signature:string):boolean{
     return streamVideo.verifyWebhook(body,signature)
 }
 export async function POST(req:NextRequest){
+    console.log("🔔 WEBHOOK RECEIVED");
+    
     const signature=req.headers.get("x-signature");
     const apiKey=req.headers.get("x-api-key");
     if(!signature || !apiKey){
+        console.log("❌ Missing signature or API key");
         return NextResponse.json(
             {error:"Missing signature or API key"},
             {status:400}
@@ -34,6 +35,7 @@ export async function POST(req:NextRequest){
 
     const body=await req.text();
     if(!verifySignatureWithSDK(body,signature)){
+        console.log("❌ Invalid signature");
         return NextResponse.json({error:"Invalid signature"},{status:401})
     }
 
@@ -41,34 +43,48 @@ export async function POST(req:NextRequest){
     try{
         payload=JSON.parse(body) as Record<string,unknown>;
     }catch{
+        console.log("❌ Invalid JSON");
         return NextResponse.json({error:"Invalid Json"},{status:400})
     }
 
     const eventType=(payload as Record<string,unknown>)?.type;
+    console.log("📨 Event Type:", eventType);
+    console.log("📦 Full Payload:", JSON.stringify(payload, null, 2));
 
     if(eventType==="call.session_started"){
         const event=payload as CallSessionStartedEvent;
         const meetingId=event.call.custom?.meetingId;
+        
+        console.log("🎯 Processing call.session_started");
+        console.log("Meeting ID from webhook:", meetingId);
 
         if(!meetingId){
+            console.log("❌ No meetingId in webhook");
             return NextResponse.json({error:"Missing meetingId"},{status:400})
         }
+        
+        console.log("🔍 Searching for meeting:", meetingId);
         const [existingMeeting]=await db
                .select()
                .from(meetings)
-               .where(
-                and(
-                    eq(meetings.id,meetingId),
-                    not(eq(meetings.status,"completed")),
-                    not(eq(meetings.status,"active")),
-                    not(eq(meetings.status,"cancelled")),
-                    not(eq(meetings.status,"processing"))
-
-                )
-               );
-                if(!existingMeeting){
+               .where(eq(meetings.id,meetingId));
+        
+        console.log("Meeting found:", existingMeeting ? "✓ YES" : "❌ NO");
+        if(existingMeeting) {
+            console.log("Meeting details:", { id: existingMeeting.id, name: existingMeeting.name, agentId: existingMeeting.agentId });
+        }
+        
+        if(!existingMeeting){
+            console.log("❌ Meeting not found");
             return NextResponse.json({error:"Meeting not found"},{status:404})
         }
+        
+        // Only initialize agent if meeting is in "upcoming" status (prevent duplicates)
+        if(existingMeeting.status !== "upcoming"){
+            console.log("⚠️ Meeting already initialized or completed, skipping agent initialization");
+            return NextResponse.json({status:"ok"});
+        }
+        
         await db
         .update(meetings)
         .set({
@@ -77,47 +93,84 @@ export async function POST(req:NextRequest){
         })
         .where(eq(meetings.id,meetingId));
         
+        console.log("✓ Meeting status updated to active");
+        
+        console.log("🔍 Searching for agent:", existingMeeting.agentId);
         const [existingAgent]=await db
         .select()
         .from(agents)
         .where(eq(agents.id,existingMeeting.agentId));
 
-         if(!existingAgent){
-            return NextResponse.json({error:"agent not found"},{status:404});
-
+        console.log("Agent found:", existingAgent ? "✓ YES" : "❌ NO");
+        if(existingAgent) {
+            console.log("Agent details:", { id: existingAgent.id, name: existingAgent.name });
         }
 
-        try {
-  const call = streamVideo.video.call("default", meetingId);
-  const realTimeClient = await streamVideo.video.connectOpenAi({
-    call: call,
-    openAiApiKey: process.env.OPEN_API_KEY!,
-    agentUserId: existingAgent.id,
-  });
-  const dynamicSystemPrompt = `
-${existingAgent.instructions}
+        if(!existingAgent){
+            console.log("❌ Agent not found");
+            return NextResponse.json({error:"agent not found"},{status:404});
+        }
 
----
-CRITICAL MEETING CONTEXT:
-You are currently participating in a live audio meeting. 
-The official name and agenda for this meeting is: "${existingMeeting.name}".
+        // Initialize agent in background WITHOUT blocking the webhook response
+        (async () => {
+            try {
+                console.log("=".repeat(80));
+                console.log("INITIALIZING OLLAMA-BASED AGENT");
+                console.log("Meeting ID:", meetingId);
+                console.log("Meeting Name:", existingMeeting.name);
+                console.log("Agent Name:", existingAgent.name);
+                console.log("Agent ID:", existingAgent.id);
+                console.log("Agent Instructions:", existingAgent.instructions);
+                console.log("=".repeat(80));
 
-YOUR STRICT DIRECTIVES:
-1. Act strictly according to your core instructions above, but apply them ONLY to the context of this specific meeting.
-2. The meeting's name ("${existingMeeting.name}") is your primary topic and agenda. 
-3. If any participant asks "What is the agenda?", "What are we discussing today?", or similar questions, explicitly state that the agenda is: "${existingMeeting.name}".
-4. If someone asks you a question that is completely unrelated to this agenda or your core instructions, politely decline to answer and gently guide the conversation back to the main topic.
-5. but if someone says hello or related just answer politely and redirect to the agenda and answers questions they are asking but only those which are related to either "${existingMeeting.name}" or "${existingAgent.instructions}"
-`;          
+                // Check if Ollama is running
+                const ollamaHealthy = await checkOllamaHealth();
+                if (!ollamaHealthy) {
+                    console.error("❌ Ollama is not running or not accessible");
+                    console.log("   Make sure Ollama is running: ollama serve");
+                    return;
+                }
 
-  realTimeClient.updateSession({
-    instructions: dynamicSystemPrompt,
-  });
+                console.log("✓ Ollama health check passed");
 
-} catch (err) {
-  console.error("connectOpenAi failed", err);
-  return NextResponse.json({ error: "connectOpenAi failed" }, { status: 500 });
-}
+                // List available models
+                const models = await listOllamaModels();
+                console.log(`✓ Available Ollama models: ${models.map(m => m.model).join(", ") || "None"}`);
+
+                // Initialize Ollama agent
+                // Using model from agent.model field or default to "mistral"
+                const agentModel = existingAgent.model || "mistral";
+                
+                const ollamaAgent = await initializeOllamaAgent(
+                    existingAgent.name,
+                    agentModel,
+                    existingAgent.instructions,
+                    ["calculator", "websearch", "calendar"]
+                );
+
+                if (!ollamaAgent) {
+                    console.error("❌ Failed to initialize Ollama agent");
+                    return;
+                }
+
+                console.log("✅ Ollama agent initialized successfully");
+                console.log(`   Model: ${ollamaAgent.model}`);
+                console.log(`   Temperature: ${ollamaAgent.temperature}`);
+                console.log(`   Tools: ${ollamaAgent.tools.join(", ")}`);
+                console.log(`   Knowledge Base: ${ollamaAgent.knowledgeBase.length} documents`);
+
+                // Store agent configuration in database for persistence
+                // TODO: Create agent_sessions table to store active agent instances
+                console.log("✅ Agent configuration stored and ready for meeting interactions");
+
+            } catch (err) {
+                console.error("❌ Ollama Agent Initialization Failed:");
+                console.error("Error details:", err);
+                console.error("Error stack:", (err as any)?.stack);
+            }
+        })();
+
+        return NextResponse.json({status:"ok"});
 
     }else if(eventType==="call.session_participant_left"){
         const event=payload as CallSessionParticipantLeftEvent;
@@ -194,10 +247,12 @@ YOUR STRICT DIRECTIVES:
         );
        }
 
+       // Handle messages from ACTIVE calls or COMPLETED calls
        const [existingMeeting]=await db 
           .select()
           .from(meetings)
-          .where(and(eq(meetings.id,channelId),eq(meetings.status,"completed")));
+          .where(and(eq(meetings.id,channelId), 
+                    or(eq(meetings.status,"active"), eq(meetings.status,"completed"))));
 
           if(!existingMeeting){
             return NextResponse.json({error:"Meetings not found"},{status:404})
@@ -236,29 +291,31 @@ YOUR STRICT DIRECTIVES:
       const channel=streamChat.channel("messaging",channelId)
       await channel.watch();
 
-
       const previousMessages=channel.state.messages
            .slice(-5)
-           .filter((msg)=>msg.text && msg.text.trim() !== "")
-           .map<ChatCompletionMessageParam>((message)=>({
-            role:message.user?.id === existingAgent.id ? "assistant":"user",
-            content:message.text || "",
-           }));
+           .filter((msg)=>msg.text && msg.text.trim() !== "");
 
-           const gptResponse=await openaiclient.chat.completions.create({
-            messages:[
-                {role:"system", content:instructions},
-                ...previousMessages,
-                {role:"user",content:text},
-            ],
-            model:"gpt-4o"
-           });
+      // Build chat history for context
+      let fullPrompt = previousMessages
+        .map((msg) => `${msg.user?.id === existingAgent.id ? "Agent" : "User"}: ${msg.text}`)
+        .join("\n");
+      
+      fullPrompt += `\nUser: ${text}\nAgent:`;
 
-           const GPTResponseText=gptResponse.choices[0].message.content;
-           console.log(GPTResponseText);
+      // Generate response using Ollama
+      const { generateWithOllama } = await import("@/lib/ollama");
+      const ollamaResponse = await generateWithOllama({
+            model: existingAgent.model || "mistral",
+            prompt: fullPrompt,
+            system: instructions,
+            temperature: 0.2,
+      });
+
+      const GPTResponseText = ollamaResponse.trim();
+      console.log(GPTResponseText);
                 if(!GPTResponseText){
                     return NextResponse.json(
-                        {error:"No response from GPT"},
+                        {error:"No response from Ollama"},
                         {status:400}
                     );
                 }

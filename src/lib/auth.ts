@@ -4,7 +4,19 @@ import {polar,checkout,portal} from "@polar-sh/better-auth";
 import { db } from "@/db"; // your drizzle instance
  import * as schema from "@/db/schema"
 import { polarClient } from "./polar";
+
+const isDev = process.env.NODE_ENV === "development";
+const baseURL = isDev 
+    ? "http://localhost:3000" 
+    : (process.env.BETTER_AUTH_URL || "https://agent-chat-ai-mu.vercel.app");
+
 export const auth = betterAuth({
+    baseURL,
+    trustedOrigins: [
+        ...(isDev ? ["http://localhost:3000", "http://192.168.1.33:3000"] : []),
+        "https://agent-chat-ai-mu.vercel.app",
+        ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : []),
+    ],
     plugins:[
         polar({
           client:polarClient,
