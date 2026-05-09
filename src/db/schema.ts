@@ -53,6 +53,7 @@ export const agents = pgTable("agents", {
 id: text('id').primaryKey().$defaultFn(() => nanoid()),
 name: text('name').notNull(),
 instructions: text('instructions').notNull(),
+model: text('model').notNull().default("mistral"), // Ollama model name
 createdAt: timestamp('created_at').defaultNow().notNull(),
 updatedAt: timestamp('updated_at').defaultNow().notNull(),
 userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
