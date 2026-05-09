@@ -94,9 +94,24 @@ export async function POST(req:NextRequest){
     openAiApiKey: process.env.OPEN_API_KEY!,
     agentUserId: existingAgent.id,
   });
+  const dynamicSystemPrompt = `
+${existingAgent.instructions}
+
+---
+CRITICAL MEETING CONTEXT:
+You are currently participating in a live audio meeting. 
+The official name and agenda for this meeting is: "${existingMeeting.name}".
+
+YOUR STRICT DIRECTIVES:
+1. Act strictly according to your core instructions above, but apply them ONLY to the context of this specific meeting.
+2. The meeting's name ("${existingMeeting.name}") is your primary topic and agenda. 
+3. If any participant asks "What is the agenda?", "What are we discussing today?", or similar questions, explicitly state that the agenda is: "${existingMeeting.name}".
+4. If someone asks you a question that is completely unrelated to this agenda or your core instructions, politely decline to answer and gently guide the conversation back to the main topic.
+5. but if someone says hello or related just answer politely and redirect to the agenda and answers questions they are asking but only those which are related to either "${existingMeeting.name}" or "${existingMeeting.instructions}"
+`;          
 
   realTimeClient.updateSession({
-    instructions: existingAgent.instructions,
+    instructions: dynamicSystemPrompt,
   });
 
 } catch (err) {
